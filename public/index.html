@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bekalo — Performance Hub</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-text">Bekalo</span>
+      </div>
+      <a href="https://bekalo.com" target="_blank" class="sidebar-site-link">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        bekalo.com
+      </a>
+      <nav class="sidebar-nav">
+        <span class="nav-label">TEAMS</span>
+        <div id="sidebar-teams"></div>
+      </nav>
+      <form id="team-form" class="sidebar-new-team">
+        <input id="team-name" placeholder="New team name…" autocomplete="off" required />
+        <button type="submit" class="btn btn-primary btn-sm w-full">+ Create Team</button>
+      </form>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+      <header class="top-bar">
+        <div>
+          <h1 class="page-title" id="page-title">Select a team</h1>
+          <p class="page-sub" id="page-sub">Create or select a team from the sidebar</p>
+        </div>
+        <div class="top-bar-actions" id="top-bar-actions"></div>
+      </header>
+
+      <section id="roster-view" class="roster-view hidden"></section>
+    </main>
+  </div>
+
+  <!-- ── Templates ── -->
+
+  <template id="athlete-card-tpl">
+    <div class="athlete-card">
+      <div class="ac-header">
+        <div class="ac-avatar">
+          <span class="ac-initials"></span>
+        </div>
+        <div class="ac-info">
+          <h3 class="ac-name"></h3>
+          <span class="ac-pos"></span>
+        </div>
+        <div class="ac-controls">
+          <span class="whoop-pill disconnected">WHOOP</span>
+          <a  class="btn btn-ghost btn-xs connect-btn" href="#">Connect WHOOP</a>
+          <button class="btn btn-accent btn-xs sync-btn">↻ Sync</button>
+          <button class="btn btn-danger btn-xs delete-btn">✕</button>
+        </div>
+      </div>
+
+      <!-- Quick stats bar (visible when data available) -->
+      <div class="ac-quick hidden">
+        <div class="qs-item">
+          <span class="qs-label">Match Fitness</span>
+          <span class="qs-val fitness-val">—</span>
+        </div>
+        <div class="qs-divider"></div>
+        <div class="qs-item">
+          <span class="qs-label">Recovery</span>
+          <span class="qs-val recovery-val">—</span>
+        </div>
+        <div class="qs-divider"></div>
+        <div class="qs-item">
+          <span class="qs-label">Sleep</span>
+          <span class="qs-val sleep-val">—</span>
+        </div>
+        <div class="qs-divider"></div>
+        <div class="qs-item">
+          <span class="qs-label">Strain</span>
+          <span class="qs-val strain-val">—</span>
+        </div>
+        <div class="qs-divider"></div>
+        <div class="qs-item">
+          <span class="qs-label">Resting HR</span>
+          <span class="qs-val rhr-val">—</span>
+        </div>
+        <div class="qs-divider"></div>
+        <div class="qs-item qs-item--status">
+          <span class="readiness-badge">—</span>
+        </div>
+      </div>
+
+      <!-- Full dashboard (injected by JS) -->
+      <div class="ac-dashboard"></div>
+    </div>
+  </template>
+
+  <!-- WHOOP link modal -->
+  <div id="whoop-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Link WHOOP Account</h2>
+        <button class="modal-close btn btn-ghost btn-xs" id="modal-close">✕</button>
+      </div>
+
+      <div class="modal-steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Open the WHOOP authorization page</strong>
+            <p>Click the button below — it opens WHOOP in a new tab. Sign in and click <em>Approve</em>.</p>
+            <a id="modal-auth-link" href="#" target="_blank" class="btn btn-primary btn-sm" style="margin-top:8px">
+              Open WHOOP Authorization →
+            </a>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Copy the authorization code</strong>
+            <p>After approving, you land on a Postman page. Copy the <code>code</code> value from the URL or the page body.</p>
+            <div class="code-hint">https://oauth.pstmn.io/v1/callback?<strong>code=XXXXXX</strong>&amp;state=…</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Paste the code here</strong>
+            <input id="modal-code-input" placeholder="Paste authorization code…" autocomplete="off" />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <p id="modal-error" class="modal-err hidden"></p>
+        <button id="modal-submit" class="btn btn-primary w-full">Link WHOOP Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AI Chat Widget ── -->
+  <button class="chat-bubble" id="chat-bubble" title="Bekalo AI Coach">⚡</button>
+
+  <div class="chat-panel hidden" id="chat-panel">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <div class="chat-avatar">🧠</div>
+        <div>
+          <div class="chat-title">Bekalo AI Coach</div>
+          <div class="chat-sub">Powered by GPT-4o mini</div>
+        </div>
+      </div>
+      <button class="chat-close" id="chat-close">✕</button>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-welcome">
+        <strong>Ask me anything about your players</strong>
+        "Who is ready to play today?" · "Compare recovery across the squad" · "Who is at injury risk?"
+      </div>
+    </div>
+
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chat-input" placeholder="Ask about your players…" rows="1"></textarea>
+      <button class="chat-send" id="chat-send">➤</button>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
