@@ -34,14 +34,34 @@ function loadDb() {
 }
 
 function saveDb() {
-  const { teams, nextTeamId, nextAthleteId } = db;
-  fs.writeFileSync(DB_FILE, JSON.stringify({ teams, nextTeamId, nextAthleteId }, null, 2));
+  try {
+    const { teams, nextTeamId, nextAthleteId } = db;
+    fs.writeFileSync(DB_FILE, JSON.stringify({ teams, nextTeamId, nextAthleteId }, null, 2));
+  } catch (err) {
+    console.error('[DB] saveDb failed:', err.message);
+  }
+}
+
+function logDbState(label) {
+  console.log(`[DB] ${label} | teams: ${db.teams.length} | ids: [${db.teams.map(t => `${t.id}:"${t.name}"(${t.athletes.length})`).join(', ')}]`);
 }
 
 const db = loadDb();
+console.log(`[DB] Loaded from ${DB_FILE}`);
+logDbState('startup');
+
+const IS_PROD = process.env.NODE_ENV === 'production';
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ── Request logger ─────────────────────────────────────────────────
+app.use((req, _res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/auth')) {
+    console.log(`[REQ] ${req.method} ${req.path}`, Object.keys(req.body || {}).length ? req.body : '');
+  }
+  next();
+});
 
 function getTeam(teamId) {
   return db.teams.find((t) => t.id === teamId);
@@ -273,15 +293,20 @@ app.post('/api/teams', (req, res) => {
   const team = { id: db.nextTeamId++, name, athletes: [] };
   db.teams.push(team);
   saveDb();
+  logDbState(`team created id=${team.id}`);
   res.status(201).json(team);
 });
 
 app.delete('/api/teams/:teamId', (req, res) => {
   const teamId = Number(req.params.teamId);
   const idx = db.teams.findIndex((t) => t.id === teamId);
-  if (idx === -1) return res.status(404).json({ error: 'Team not found' });
+  if (idx === -1) {
+    console.log(`[DB] DELETE team ${teamId} — not found. current ids: [${db.teams.map(t => t.id).join(', ')}]`);
+    return res.status(404).json({ error: 'Team not found' });
+  }
   db.teams.splice(idx, 1);
   saveDb();
+  logDbState(`team deleted id=${teamId}`);
   res.json({ ok: true });
 });
 
@@ -292,7 +317,10 @@ app.get('/api/teams', (_req, res) => {
 app.post('/api/teams/:teamId/athletes', (req, res) => {
   const teamId = Number(req.params.teamId);
   const team = getTeam(teamId);
-  if (!team) return res.status(404).json({ error: 'Team not found' });
+  if (!team) {
+    console.log(`[DB] POST athlete — team ${teamId} not found. current ids: [${db.teams.map(t => t.id).join(', ')}]`);
+    return res.status(404).json({ error: 'Team not found' });
+  }
 
   const firstName = String(req.body.firstName || '').trim();
   const lastName = String(req.body.lastName || '').trim();
@@ -313,16 +341,21 @@ app.post('/api/teams/:teamId/athletes', (req, res) => {
   };
   team.athletes.push(athlete);
   saveDb();
+  logDbState(`athlete created id=${athlete.id} team=${teamId}`);
   res.status(201).json({ ...athlete, whoopAuthUrl: whoopAuthUrl(athlete.id) });
 });
 
 app.delete('/api/athletes/:athleteId', (req, res) => {
   const athleteId = Number(req.params.athleteId);
   const result = getAthlete(athleteId);
-  if (!result) return res.status(404).json({ error: 'Athlete not found' });
+  if (!result) {
+    console.log(`[DB] DELETE athlete ${athleteId} — not found`);
+    return res.status(404).json({ error: 'Athlete not found' });
+  }
   const { team } = result;
   team.athletes = team.athletes.filter((a) => a.id !== athleteId);
   saveDb();
+  logDbState(`athlete deleted id=${athleteId}`);
   res.json({ ok: true });
 });
 
@@ -527,8 +560,10 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`WHOOP Team App running on ${APP_BASE_URL}`);
-  console.log(`Health: ${APP_BASE_URL}/health`);
-  console.log(`WHOOP redirect URI da registrare: ${WHOOP_REDIRECT_URI}`);
+const HOST = IS_PROD ? '0.0.0.0' : '127.0.0.1';
+app.listen(PORT, HOST, () => {
+  console.log(`[SERVER] Bekalo running on ${HOST}:${PORT} (${IS_PROD ? 'production' : 'development'})`);
+  console.log(`[SERVER] APP_BASE_URL = ${APP_BASE_URL}`);
+  console.log(`[SERVER] WHOOP redirect URI = ${WHOOP_REDIRECT_URI}`);
+  console.log(`[SERVER] DB file = ${DB_FILE}`);
 });

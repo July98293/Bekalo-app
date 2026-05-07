@@ -15,11 +15,11 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY server.js ./
 COPY public/   ./public/
 
-# db.json is created at runtime — mount a volume to persist it:
-# docker run -v $(pwd)/data:/app/data ...
-# and set DB_FILE=/app/data/db.json in env, or just accept it resets on redeploy
 ENV NODE_ENV=production \
     PORT=8899
+
+# Give the node user write access to /app so db.json can be created at runtime
+RUN chown -R node:node /app
 
 EXPOSE 8899
 
