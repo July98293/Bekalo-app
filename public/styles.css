@@ -1311,3 +1311,287 @@ input::placeholder, textarea::placeholder { color: var(--text3); }
 .tov2-hr-info { flex:1; min-width:0; }
 .tov2-hr-name { font-size:12px; font-weight:700; color:var(--text); }
 .tov2-hr-factors { font-size:11px; color:var(--text3); flex:2; min-width:0; }
+
+/* ── Pitch player tooltip ───────────────────────────────────────────── */
+.pitch-tt {
+  position: fixed;
+  z-index: 9999;
+  background: #1e293b;
+  color: #f1f5f9;
+  border-radius: 10px;
+  padding: 10px 13px;
+  font-size: 12px;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.08);
+  max-width: 220px;
+  line-height: 1.4;
+}
+.ptip-name   { font-weight: 800; font-size: 13px; margin-bottom: 2px; }
+.ptip-role   { font-size: 10px; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
+.ptip-stats  { display: flex; flex-direction: column; gap: 3px; margin-bottom: 7px; }
+.ptip-s      { font-size: 11px; color: #cbd5e1; }
+.ptip-s strong { color: #f1f5f9; }
+.ptip-status { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #4ade80; }
+.ptip-unsynced { color: #94a3b8; }
+
+/* ── Coach Notes + Lab section ──────────────────────────────────────── */
+.pa-notes-section, .pa-coach-section { margin: 16px 22px 8px; padding: 16px 18px; background: rgba(255,255,255,.55); border-radius: 12px; border: 1px solid rgba(0,0,0,.08); }
+.pa-lab-divider { height: 1px; background: rgba(0,0,0,.08); margin: 16px 0; }
+.pa-notes-head    { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--text2); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+.pa-notes-hint    { font-size: 10px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--text3); }
+.pa-notes-ta      { width: 100%; padding: 10px 12px; border: 1px solid rgba(0,0,0,.12); border-radius: 8px; background: rgba(255,255,255,.7); font-size: 12.5px; line-height: 1.5; color: var(--text); resize: vertical; box-sizing: border-box; font-family: inherit; }
+.pa-notes-ta:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 2px rgba(79,70,229,.15); }
+.pa-notes-footer  { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.pa-notes-status  { font-size: 11px; color: var(--green); font-weight: 600; }
+
+/* ── Sidebar calendar ──────────────────────────────────────────────── */
+.sidebar-calendar {
+  margin: 4px 8px 2px;
+  padding: 8px 6px 2px;
+  border-top: 1px solid rgba(255,255,255,0.55);
+}
+.sidebar-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px 6px;
+}
+.cal-refresh-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text3);
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.cal-refresh-btn:hover { color: var(--indigo); }
+.sidebar-cal-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px 8px;
+}
+.cal-team-badge { display: flex; align-items: center; color: var(--indigo); opacity: 0.7; }
+.cal-team-name { font-size: 12px; font-weight: 700; color: var(--text); }
+.cal-fixtures { display: flex; flex-direction: column; gap: 2px; }
+.cal-loading, .cal-empty {
+  font-size: 11px;
+  color: var(--text3);
+  padding: 6px 4px;
+  text-align: center;
+}
+.cal-empty.cal-setup {
+  font-size: 10px;
+  line-height: 1.5;
+  background: rgba(90,95,207,0.06);
+  border-radius: 6px;
+  padding: 6px 8px;
+  text-align: left;
+}
+.cal-empty.cal-setup code { font-size: 10px; color: var(--indigo); }
+.cal-fixture {
+  padding: 6px 4px;
+  border-radius: 7px;
+  cursor: default;
+  transition: background 0.1s;
+}
+.cal-fixture:hover { background: rgba(255,255,255,0.45); }
+.cal-fixture-soon { background: rgba(90,95,207,0.06); }
+.cal-fx-date {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+.cal-fx-match {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.cal-fx-venue {
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 3px;
+  padding: 1px 4px;
+  flex-shrink: 0;
+}
+.cal-venue-h { background: rgba(90,95,207,0.15); color: var(--indigo); }
+.cal-venue-a { background: rgba(0,0,0,0.07); color: var(--text3); }
+.cal-fx-opp {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cal-fx-time {
+  font-size: 10px;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+.cal-fx-comp {
+  font-size: 9.5px;
+  color: var(--text3);
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Demo team sidebar button ──────────────────────────────────────── */
+.sidebar-demo-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 14px; margin: 4px 8px 6px;
+  background: rgba(79,70,229,.1); border: 1px solid rgba(79,70,229,.25);
+  border-radius: 8px; cursor: pointer; font-size: 12.5px; font-weight: 700;
+  color: var(--indigo); transition: background .15s;
+}
+.sidebar-demo-btn:hover { background: rgba(79,70,229,.18); }
+.sidebar-demo-tag { font-size: 9px; font-weight: 800; letter-spacing: .6px; background: var(--indigo); color: white; border-radius: 4px; padding: 2px 5px; }
+
+/* Demo mode visual markers */
+.demo-badge { font-size: 9px; font-weight: 800; background: rgba(79,70,229,.15); color: var(--indigo); border-radius: 4px; padding: 2px 6px; letter-spacing: .4px; }
+.demo-badge-top { font-size: 10px; font-weight: 800; background: rgba(79,70,229,.12); color: var(--indigo); border-radius: 6px; padding: 4px 10px; letter-spacing: .5px; }
+.demo-card { opacity: 1; }
+.demo-info-banner {
+  margin: 0 0 12px; padding: 12px 18px; background: rgba(79,70,229,.07);
+  border: 1px solid rgba(79,70,229,.2); border-radius: 10px;
+  font-size: 12px; color: var(--text2); line-height: 1.5;
+}
+.demo-dismiss { color: var(--indigo); font-weight: 700; margin-left: 10px; }
+
+/* ── Lab Analysis Section ──────────────────────────────────────────── */
+.pa-lab-section { margin: 16px 22px 8px; padding: 16px 18px; background: rgba(255,255,255,.55); border-radius: 12px; border: 1px solid rgba(0,0,0,.08); }
+.pa-lab-head    { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--text2); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.pa-lab-head .pa-notes-hint { font-size: 10px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--text3); }
+
+.pa-lab-upload-area { border: 2px dashed rgba(90,95,207,.3); border-radius: 10px; padding: 18px; cursor: pointer; transition: border-color .2s, background .2s; background: rgba(90,95,207,.04); min-height: 80px; }
+.pa-lab-upload-area:hover { border-color: rgba(90,95,207,.6); background: rgba(90,95,207,.07); }
+.pa-lab-drag  { border-color: var(--indigo) !important; background: rgba(90,95,207,.1) !important; }
+.pa-lab-upload-prompt { display: flex; align-items: center; gap: 12px; }
+.pa-lab-upload-icon   { display: flex; align-items: center; color: var(--indigo); opacity: 0.65; flex-shrink: 0; }
+.pa-lab-upload-text   { font-size: 12px; color: var(--text3); line-height: 1.5; }
+.pa-lab-upload-text small { font-size: 10.5px; }
+.pa-lab-actions { display: flex; gap: 8px; }
+.pa-lab-progress { font-size: 12px; color: var(--text3); font-style: italic; }
+
+.pa-lab-result-card { background: rgba(255,255,255,.6); border: 1px solid rgba(0,0,0,.08); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+.pa-lab-rc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.pa-lab-rc-cat  { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--indigo); }
+.pa-lab-rc-date { font-size: 10px; color: var(--text3); }
+.pa-lab-summary { font-size: 12px; color: var(--text2); line-height: 1.5; margin-bottom: 8px; }
+.pa-lab-flags   { font-size: 11px; font-weight: 700; color: var(--red); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+
+.pa-lab-bm-table { display: flex; flex-direction: column; }
+.pa-lab-bm-row   { display: grid; grid-template-columns: 1fr 80px 90px 70px; gap: 6px; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,.06); font-size: 11.5px; }
+.pa-lab-bm-row:last-child { border-bottom: none; }
+.pa-lab-bm-name  { font-weight: 600; color: var(--text); }
+.pa-lab-bm-val   { font-weight: 800; text-align: right; }
+.pa-lab-bm-unit  { font-weight: 400; font-size: 9.5px; color: var(--text3); }
+.pa-lab-bm-ref   { font-size: 10px; color: var(--text3); text-align: center; }
+.pa-lab-bm-status { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; text-align: right; border-radius: 4px; padding: 2px 5px; }
+.pa-lab-bm-normal       { background: rgba(26,158,92,.1); color: var(--green); }
+.pa-lab-bm-low          { background: rgba(196,122,10,.1); color: var(--yellow); }
+.pa-lab-bm-high         { background: rgba(196,122,10,.1); color: var(--yellow); }
+.pa-lab-bm-critical_low  { background: rgba(212,48,48,.1); color: var(--red); }
+.pa-lab-bm-critical_high { background: rgba(212,48,48,.1); color: var(--red); }
+.pa-lab-recs { font-size: 11px; color: var(--text3); margin-top: 8px; line-height: 1.5; }
+
+/* ═══════════════════════════════════════════════════════
+   DARK MODE
+   ═══════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --text:     #f1f5f9;
+  --text2:    #cbd5e1;
+  --text3:    #64748b;
+  --glass-bg:    rgba(30,41,59,0.82);
+  --glass-bg2:   rgba(15,23,42,0.72);
+  --glass-border:rgba(255,255,255,0.07);
+  --glass-shadow:0 8px 32px rgba(0,0,0,0.4);
+  --green:  #34d399;  --green-g:rgba(52,211,153,.14);
+  --yellow: #fbbf24;  --yellow-g:rgba(251,191,36,.12);
+  --orange: #fb923c;  --orange-g:rgba(251,146,60,.12);
+  --red:    #f87171;  --red-g:rgba(248,113,113,.12);
+  --indigo: #818cf8;  --indigo-g:rgba(129,140,248,.18);
+}
+[data-theme="dark"] body { background: #0b1120; }
+[data-theme="dark"] body::before {
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 15%, rgba(99,102,241,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 55% at 85% 80%, rgba(59,130,246,0.10) 0%, transparent 60%),
+    linear-gradient(145deg, #0b1120 0%, #111827 60%, #0b1120 100%);
+}
+[data-theme="dark"] .sidebar { background: rgba(11,17,32,0.97); border-right-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .sidebar-logo { border-bottom-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .team-nav-item:hover { background: rgba(255,255,255,.05); }
+[data-theme="dark"] .tni-count { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.1); }
+[data-theme="dark"] .sidebar-new-team input { background: rgba(30,41,59,.8); color: #f1f5f9; border-color: rgba(255,255,255,.1); }
+[data-theme="dark"] .sidebar-calendar { border-top-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .cal-fixture:hover { background: rgba(255,255,255,.04); }
+[data-theme="dark"] .cal-fixture-soon { background: rgba(129,140,248,.07); }
+[data-theme="dark"] .cal-empty.cal-setup { background: rgba(129,140,248,.07); }
+[data-theme="dark"] .sidebar-demo-btn { background: rgba(129,140,248,.1); border-color: rgba(129,140,248,.2); }
+[data-theme="dark"] .top-bar { background: rgba(11,17,32,.9); border-bottom-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .team-overview { background: rgba(11,17,32,.7); border-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .tov2-banner { border-bottom-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .tov2-top-row { border-bottom-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .tov2-main-row { border-bottom-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .tov2-prow { border-bottom-color: rgba(255,255,255,.05); }
+[data-theme="dark"] .tov2-prow:hover { background: rgba(255,255,255,.04); }
+[data-theme="dark"] .tov2-roster-tabs { border-bottom-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .tov2-squad-mini { border-bottom-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .tov2-tac-header { border-bottom-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .tov2-right-col { border-left-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .tov2-load { border-top-color: rgba(255,255,255,.06); }
+[data-theme="dark"] .tov2-high-risk { border-top-color: rgba(248,113,113,.15); background: rgba(248,113,113,.04); }
+[data-theme="dark"] .tov2-hr-row { background: rgba(248,113,113,.07); border-color: rgba(248,113,113,.15); }
+[data-theme="dark"] .tov2-nm-weather-row { background: rgba(30,41,59,.7); border-color: rgba(255,255,255,.07); }
+[data-theme="dark"] .tov2-game-form input { background: rgba(15,23,42,.9); color: #f1f5f9; border-color: rgba(255,255,255,.1); }
+[data-theme="dark"] .athlete-card { background: rgba(15,23,42,.9) !important; border-color: rgba(255,255,255,.07) !important; }
+[data-theme="dark"] .ac-header { background: rgba(8,14,28,.6) !important; border-bottom-color: rgba(255,255,255,.07) !important; }
+[data-theme="dark"] .pa-topbar { background: linear-gradient(135deg,#060d1c,#08122a) !important; }
+[data-theme="dark"] .pa-source-row { background: rgba(20,30,50,.6) !important; border-bottom-color: rgba(255,255,255,.06) !important; }
+[data-theme="dark"] .pa-risk-bar.pa-risk-red    { background: rgba(248,113,113,.15) !important; }
+[data-theme="dark"] .pa-risk-bar.pa-risk-yellow { background: rgba(251,191,36,.12) !important; }
+[data-theme="dark"] .pa-ai-card { background: #030810 !important; border-color: rgba(129,140,248,.2) !important; }
+[data-theme="dark"] .pa-panel { background: rgba(20,30,50,.8) !important; border-color: rgba(255,255,255,.07) !important; }
+[data-theme="dark"] .pa-mbar { background: rgba(255,255,255,.08) !important; }
+[data-theme="dark"] .pa-chart-ph { background: rgba(15,23,42,.6) !important; }
+[data-theme="dark"] .pa-cs-panel { background: rgba(20,30,50,.7) !important; }
+[data-theme="dark"] .pa-notes-section, [data-theme="dark"] .pa-coach-section, [data-theme="dark"] .pa-lab-section { background: rgba(20,30,50,.75) !important; border-color: rgba(255,255,255,.08) !important; }
+[data-theme="dark"] .pa-lab-divider { background: rgba(255,255,255,.08) !important; }
+[data-theme="dark"] .pa-notes-ta, [data-theme="dark"] .pa-lab-notes-ta { background: rgba(8,14,28,.7) !important; color: #f1f5f9 !important; border-color: rgba(255,255,255,.1) !important; }
+[data-theme="dark"] .pa-lab-upload-area { background: rgba(8,14,28,.5) !important; border-color: rgba(129,140,248,.25) !important; }
+[data-theme="dark"] .pa-lab-result-card { background: rgba(8,14,28,.6) !important; border-color: rgba(255,255,255,.08) !important; }
+[data-theme="dark"] .pa-lab-bm-row { border-bottom-color: rgba(255,255,255,.06) !important; }
+[data-theme="dark"] .pa-lab-bm-row:last-child { border-bottom: none !important; }
+[data-theme="dark"] .auth-card { background: rgba(15,23,42,.97) !important; border-color: rgba(255,255,255,.08) !important; }
+[data-theme="dark"] .auth-card input { background: rgba(8,14,28,.8) !important; border-color: rgba(255,255,255,.1) !important; color: #f1f5f9 !important; }
+[data-theme="dark"] .modal { background: #111827 !important; border-color: rgba(255,255,255,.08) !important; }
+[data-theme="dark"] .modal-header { border-bottom-color: rgba(255,255,255,.07) !important; }
+[data-theme="dark"] .modal-steps .step-num { background: rgba(129,140,248,.2) !important; color: var(--indigo) !important; }
+[data-theme="dark"] .code-hint { background: rgba(8,14,28,.8) !important; border-color: rgba(255,255,255,.08) !important; color: #94a3b8 !important; }
+[data-theme="dark"] .chat-panel { background: rgba(11,17,32,.98) !important; border-color: rgba(255,255,255,.07) !important; }
+[data-theme="dark"] .chat-header { background: rgba(8,14,28,.9) !important; border-bottom-color: rgba(255,255,255,.07) !important; }
+[data-theme="dark"] .chat-input { background: rgba(20,30,50,.8) !important; color: #f1f5f9 !important; border-color: rgba(255,255,255,.1) !important; }
+[data-theme="dark"] .chat-welcome { background: rgba(20,30,50,.6) !important; }
+[data-theme="dark"] .btn-ghost { color: var(--text2); border-color: rgba(255,255,255,.12); }
+[data-theme="dark"] .btn-ghost:hover { background: rgba(255,255,255,.07); }
+[data-theme="dark"] .add-athlete-form input { background: rgba(20,30,50,.8); color: #f1f5f9; border-color: rgba(255,255,255,.1); }
+[data-theme="dark"] .no-data-panel { background: rgba(20,30,50,.6) !important; border-color: rgba(255,255,255,.07) !important; }
+[data-theme="dark"] .sync-info { color: var(--text3) !important; }
+[data-theme="dark"] .tov-dist-bar { background: rgba(255,255,255,.08) !important; }
+[data-theme="dark"] .tov-load-bg { background: rgba(255,255,255,.08) !important; }
+[data-theme="dark"] .demo-info-banner { background: rgba(129,140,248,.1) !important; border-color: rgba(129,140,248,.2) !important; }
+
+/* Toggle button */
+.theme-toggle-btn { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 6px; margin-left: auto; display: inline-flex; align-items: center; justify-content: center; color: var(--text2); transition: background .15s; }
+.theme-toggle-btn:hover { background: rgba(0,0,0,.08); }
+[data-theme="dark"] .theme-toggle-btn:hover { background: rgba(255,255,255,.08); }

@@ -19,7 +19,10 @@ const WHOOP_API_BASE = process.env.WHOOP_API_BASE || 'https://api.prod.whoop.com
 const WHOOP_SCOPE = process.env.WHOOP_SCOPE || 'offline read:profile read:recovery read:sleep read:workout read:cycles read:body_measurement';
 const WHOOP_REDIRECT_URI = process.env.WHOOP_REDIRECT_URI || `${APP_BASE_URL}/auth/whoop/callback`;
 const WHOOP_POSTMAN_REDIRECT = 'https://oauth.pstmn.io/v1/callback';
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+const OPENAI_API_KEY    = process.env.OPENAI_API_KEY    || '';
+const FOOTBALL_API_KEY  = process.env.FOOTBALL_API_KEY  || '';
+const FOOTBALL_API_BASE = (process.env.FOOTBALL_API_URL || 'https://api.football-data.org/v4/matches')
+  .replace(/\/matches.*$/, '');
 
 // ── Database ────────────────────────────────────────────────────────
 function loadDb() {
@@ -58,7 +61,7 @@ logDbState('startup');
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '12mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Request logger ──────────────────────────────────────────────────
@@ -251,7 +254,7 @@ function transformWhoopToDashboard(athlete) {
 
   return {
     fetchedAt: wd.fetchedAt,
-    athlete:   { firstName: athlete.firstName, lastName: athlete.lastName, role: athlete.role, weight },
+    athlete:   { id: athlete.id, firstName: athlete.firstName, lastName: athlete.lastName, role: athlete.role, weight, notes: athlete.notes ?? '', labResults: athlete.labResults ?? [] },
     matchFitness:  { score: matchFitnessScore, status: matchFitnessStatus, recommendation },
     energyRecovery:{ recoveryScore, status: recoveryStatus, calories, kilojoules: kilojoules ? Math.round(kilojoules) : null },
     stressFatigue: { dailyStrain, status: strainStatus, hrv, hrvStatus },
@@ -546,7 +549,14 @@ app.get('/api/teams/:teamId/overview', requireAuth, (req, res) => {
 
   const atRisk = withData
     .filter(({ d }) => d.injuryRisk.status.color === 'red')
-    .map(({ athlete, d }) => ({ name: `${athlete.firstName} ${athlete.lastName}`, factors: d.injuryRisk.factors }));
+    .map(({ athlete, d }) => ({
+      name:         `${athlete.firstName} ${athlete.lastName}`,
+      role:         athlete.role,
+      matchFitness: d.matchFitness.score,
+      statusColor:  d.matchFitness.status.color,
+      statusLabel:  d.matchFitness.status.label,
+      factors:      d.injuryRisk.factors,
+    }));
 
   // Full player list (synced + unsynced) for snapshot table
   const allPlayers = team.athletes.map(athlete => {
@@ -640,6 +650,81 @@ app.post('/api/chat', requireAuth, async (req, res) => {
   }
 });
 
+// ── Coach notes ──────────────────────────────────────────────────────
+app.patch('/api/athletes/:athleteId/notes', requireAuth, (req, res) => {
+  const athleteId = Number(req.params.athleteId);
+  const result = getAthlete(athleteId, req.user.id);
+  if (!result) return res.status(404).json({ error: 'Athlete not found' });
+  result.athlete.notes = String(req.body.notes ?? '').slice(0, 5000);
+  saveDb();
+  res.json({ ok: true });
+});
+
+// ── Lab Analysis (OpenAI Vision) ──────────────────────────────────────
+app.post('/api/athletes/:athleteId/analyze-lab', requireAuth, async (req, res) => {
+  const athleteId = Number(req.params.athleteId);
+  const result = getAthlete(athleteId, req.user.id);
+  if (!result) return res.status(404).json({ error: 'Athlete not found' });
+  const { athlete } = result;
+
+  const { imageBase64, mimeType } = req.body;
+  if (!imageBase64 || !mimeType) return res.status(400).json({ error: 'imageBase64 and mimeType required' });
+  if (!OPENAI_API_KEY) return res.status(500).json({ error: 'OpenAI not configured' });
+
+  const prompt = `You are a sports medicine AI analyzing lab results for a professional football player. Analyze this lab report image and extract ALL visible values. Return ONLY a valid JSON object with this exact structure (no markdown, no explanation):
+{
+  "date": "YYYY-MM-DD or null",
+  "category": "type of test e.g. Hormonal Panel / Complete Blood Count / Metabolic Panel",
+  "biomarkers": [
+    {
+      "name": "Testosterone",
+      "value": 18.5,
+      "unit": "nmol/L",
+      "refMin": 9.9,
+      "refMax": 27.8,
+      "status": "normal",
+      "performanceNote": "one sentence implication for football performance"
+    }
+  ],
+  "summary": "2-3 sentence coach-friendly summary of key findings and what they mean for training",
+  "redFlags": ["list critical values needing immediate action, or empty array"],
+  "recommendations": ["actionable training/nutrition/recovery recommendations based on results"]
+}
+Status values: normal, low, high, critical_low, critical_high. Extract every visible value.`;
+
+  try {
+    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}`, detail: 'high' } }
+        ]}],
+        max_tokens: 1500,
+        temperature: 0.1,
+      }),
+    });
+    const data = await openaiRes.json();
+    if (!openaiRes.ok) throw new Error(data.error?.message || `OpenAI ${openaiRes.status}`);
+
+    const raw = data.choices[0].message.content.trim()
+      .replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+    const analysis = JSON.parse(raw);
+
+    if (!Array.isArray(athlete.labResults)) athlete.labResults = [];
+    athlete.labResults.unshift({ ...analysis, analyzedAt: new Date().toISOString() });
+    athlete.labResults = athlete.labResults.slice(0, 10);
+    saveDb();
+
+    res.json({ ok: true, analysis: athlete.labResults[0] });
+  } catch (err) {
+    console.error('[LAB]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Weather (Open-Meteo, free, no key) ───────────────────────────────
 function wmoCodeToLabel(code) {
   if (code === 0)              return 'Clear sky';
@@ -707,6 +792,41 @@ app.get('/api/weather', requireAuth, async (req, res) => {
     });
   } catch (err) {
     console.error('[WEATHER]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Football calendar (football-data.org) ────────────────────────────
+let calendarCache = {}; // { [teamId]: { ts, data } }
+
+app.get('/api/calendar', requireAuth, async (req, res) => {
+  if (!FOOTBALL_API_KEY) return res.status(503).json({ error: 'FOOTBALL_API_KEY not configured, add it to .env' });
+  const teamId = String(req.query.teamId || '108');
+  const cached = calendarCache[teamId];
+  if (cached && Date.now() - cached.ts < 5 * 60 * 1000) return res.json(cached.data);
+
+  try {
+    const r = await fetch(
+      `${FOOTBALL_API_BASE}/teams/${teamId}/matches?status=SCHEDULED&limit=5`,
+      { headers: { 'X-Auth-Token': FOOTBALL_API_KEY } }
+    );
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.message || `football-data.org ${r.status}`);
+
+    const matches = (data.matches || []).slice(0, 5).map(m => ({
+      id:          m.id,
+      date:        m.utcDate,
+      home:        m.homeTeam?.shortName || m.homeTeam?.name || '?',
+      away:        m.awayTeam?.shortName || m.awayTeam?.name || '?',
+      competition: m.competition?.name || '',
+      homeId:      m.homeTeam?.id,
+    }));
+
+    const result = { matches, teamName: data.matches?.[0]?.homeTeam?.name || 'Team' };
+    calendarCache[teamId] = { ts: Date.now(), data: result };
+    res.json(result);
+  } catch (err) {
+    console.error('[CALENDAR]', err.message);
     res.status(500).json({ error: err.message });
   }
 });

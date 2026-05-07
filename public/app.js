@@ -11,7 +11,24 @@ const IC = {
   brain:        `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>`,
   bigLightning: `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
   teamIcon:     `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  notes:        `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+  lab:          `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22h12a2 2 0 0 0 1.76-2.96L15 9V4h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v5L4.24 19.04A2 2 0 0 0 6 22z"/></svg>`,
+  uploadBig:    `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+  sun:          `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+  moonBig:      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
 };
+
+// ── Theme ────────────────────────────────────────────────────────────
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem('bk_theme', t);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) { btn.innerHTML = t === 'dark' ? IC.sun : IC.moonBig; btn.title = t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'; }
+}
+applyTheme(localStorage.getItem('bk_theme') || 'light');
+document.getElementById('theme-toggle')?.addEventListener('click', () => {
+  applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+});
 
 // ── Auth ─────────────────────────────────────────────────────────────
 const authScreen   = document.getElementById('auth-screen');
@@ -306,7 +323,7 @@ function renderDashboard(d) {
   // ── Injury risk alert bar ────────────────────────────────────────────
   const riskBar = ir.factors.length > 0 ? `
     <div class="pa-risk-bar pa-risk-${ir.status.color}">
-      ${IC.shield} INJURY RISK: ${ir.status.label.toUpperCase()} — ${ir.factors.join(', ')}
+      ${IC.shield} INJURY RISK: ${ir.status.label.toUpperCase()}, ${ir.factors.join(', ')}
     </div>` : '';
 
   // ── AI Plan card (dark) ──────────────────────────────────────────────
@@ -406,6 +423,72 @@ function renderDashboard(d) {
       </div>
     </div>`;
 
+  // ── Lab Results helper ───────────────────────────────────────────────
+  const labResults = ath?.labResults ?? [];
+  const labResultsHTML = labResults.length > 0 ? labResults.slice(0, 2).map(lr => {
+    const statusColor = { normal: 'var(--green)', low: 'var(--yellow)', high: 'var(--yellow)', critical_low: 'var(--red)', critical_high: 'var(--red)' };
+    const flags = lr.redFlags?.length ? `<div class="pa-lab-flags">${IC.shield} ${lr.redFlags.join(', ')}</div>` : '';
+    const bms = (lr.biomarkers || []).slice(0, 12).map(bm => `
+      <div class="pa-lab-bm-row">
+        <span class="pa-lab-bm-name">${bm.name}</span>
+        <span class="pa-lab-bm-val" style="color:${statusColor[bm.status] || 'var(--text)'}">
+          ${bm.value} <span class="pa-lab-bm-unit">${bm.unit ?? ''}</span>
+        </span>
+        <span class="pa-lab-bm-ref">${bm.refMin ?? ''}–${bm.refMax ?? ''} ${bm.unit ?? ''}</span>
+        <span class="pa-lab-bm-status pa-lab-bm-${bm.status}">${bm.status?.replace('_', ' ') ?? ''}</span>
+      </div>`).join('');
+    const analyzedDate = lr.analyzedAt ? new Date(lr.analyzedAt).toLocaleDateString('en-GB') : '';
+    return `
+      <div class="pa-lab-result-card">
+        <div class="pa-lab-rc-head">
+          <span class="pa-lab-rc-cat">${lr.category ?? 'Lab Results'}</span>
+          <span class="pa-lab-rc-date">${lr.date ?? analyzedDate}</span>
+        </div>
+        <p class="pa-lab-summary">${lr.summary ?? ''}</p>
+        ${flags}
+        <div class="pa-lab-bm-table">${bms}</div>
+        ${lr.recommendations?.length ? `<div class="pa-lab-recs"><strong>Recommendations:</strong> ${lr.recommendations.join('; ')}</div>` : ''}
+      </div>`;
+  }).join('') : '';
+
+  // ── Coach Notes + Lab section ────────────────────────────────────────
+  const notesSection = `
+    <div class="pa-coach-section" data-athlete-id="${ath?.id ?? ''}">
+
+      <div class="pa-notes-block">
+        <div class="pa-notes-head">${IC.notes} COACH NOTES <span class="pa-notes-hint">Private, visible only to you</span></div>
+        <textarea class="pa-notes-ta" placeholder="Observations, match readiness comments, personal notes…" rows="3">${(ath?.notes ?? '').replace(/</g,'&lt;')}</textarea>
+        <div class="pa-notes-footer">
+          <span class="pa-notes-status"></span>
+          <button class="btn btn-primary btn-sm pa-notes-save">Save Notes</button>
+        </div>
+      </div>
+
+      <div class="pa-lab-divider"></div>
+
+      <div class="pa-lab-block">
+        <div class="pa-lab-head">
+          <span>${IC.lab} LAB ANALYSIS</span>
+          <span class="pa-notes-hint">Upload blood work, AI extracts biomarkers</span>
+        </div>
+        ${labResultsHTML}
+        <div class="pa-lab-upload-area">
+          <input type="file" class="pa-lab-file-input" accept="image/*" style="display:none"/>
+          <div class="pa-lab-upload-prompt">
+            <span class="pa-lab-upload-icon">${IC.uploadBig}</span>
+            <span class="pa-lab-upload-text">Drop blood work / hormonal panel image here<br><small>or click to browse</small></span>
+          </div>
+          <img class="pa-lab-preview" style="display:none;max-width:100%;border-radius:8px;margin-top:10px"/>
+          <div class="pa-lab-actions" style="display:none;margin-top:10px;gap:8px">
+            <button class="btn btn-primary btn-sm pa-lab-analyze-btn">${IC.lab} Analyze with AI</button>
+            <button class="btn btn-ghost btn-sm pa-lab-clear-btn">✕ Clear</button>
+          </div>
+          <div class="pa-lab-progress" style="display:none">Analyzing with GPT-4o Vision…</div>
+        </div>
+      </div>
+
+    </div>`;
+
   return `
     ${topBar}
     ${pills}
@@ -425,6 +508,7 @@ function renderDashboard(d) {
         ${gpsPanel}
       </div>
     </div>
+    ${notesSection}
     ${ts ? `<p class="sync-info">Last synced: ${ts}</p>` : ''}`;
 }
 
@@ -535,7 +619,14 @@ function renderPitchSVG(allPlayers) {
     const initials = (p.name || '?').split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase();
     const label = shortName(p.name);
     const op = p.synced ? 1 : 0.5;
-    return `<g transform="translate(${cx},${cy})" opacity="${op}">
+    const tip = JSON.stringify({
+      name: p.name, role: p.role,
+      fitness: p.matchFitness, status: p.statusLabel,
+      recovery: p.recovery, sleep: p.sleep, hrv: p.hrv, strain: p.strain,
+      synced: p.synced,
+    });
+    return `<g class="pitch-dot-g" data-pinfo='${tip.replace(/'/g, '&apos;')}' transform="translate(${cx},${cy})" opacity="${op}" style="cursor:pointer">
+      <circle r="13" fill="transparent"/>
       <circle r="11" fill="${fill}" stroke="white" stroke-width="1.5"/>
       <text text-anchor="middle" dominant-baseline="central" font-size="7.5" font-weight="700" fill="white" font-family="Inter,system-ui,sans-serif">${initials}</text>
       <text text-anchor="middle" y="18" font-size="6.5" font-weight="600" fill="white" font-family="Inter,system-ui,sans-serif" opacity="0.92">${label}</text>
@@ -594,7 +685,7 @@ function nextMatchHTML() {
       <div class="tov2-nm-head">${IC.target} NEXT MATCH <button class="tov2-clear-btn" title="Remove">✕</button></div>
       <div class="tov2-nm-count">${days}</div>
       <div class="tov2-nm-vs">vs <strong>${m.opponent}</strong></div>
-      <div class="tov2-nm-meta">${dateStr}, ${timeStr}${m.location ? ' · ' + m.location : ''}</div>
+      <div class="tov2-nm-meta">${dateStr}, ${timeStr}${m.location ? ', ' + m.location : ''}</div>
       ${weatherBlock}
       <button class="btn btn-ghost btn-sm tov2-edit-btn" style="margin-top:6px;font-size:10px">Edit</button>
     </div>`;
@@ -610,8 +701,8 @@ async function fetchAndShowWeather() {
     const w = await api(`/api/weather?location=${encodeURIComponent(m.location)}&date=${encodeURIComponent(m.matchDate)}`);
     if (!w.available) {
       const msg = w.reason === 'too_far'
-        ? `${w.locationName} · Forecast available within 16 days`
-        : `${w.locationName} · Match already past`;
+        ? `${w.locationName}, forecast available within 16 days`
+        : `${w.locationName}, match already past`;
       block.innerHTML = `<span class="tov2-nm-weather-na">${msg}</span>`;
       return;
     }
@@ -619,8 +710,8 @@ async function fetchAndShowWeather() {
       <div class="tov2-nm-weather-row">
         <span class="tov2-nm-weather-emoji">${w.emoji}</span>
         <div class="tov2-nm-weather-info">
-          <span class="tov2-nm-weather-main">${w.condition} · ${w.temperature}°C</span>
-          <span class="tov2-nm-weather-detail">Rain ${w.precipitation}% · Wind ${w.windspeed} km/h</span>
+          <span class="tov2-nm-weather-main">${w.condition}, ${w.temperature}°C</span>
+          <span class="tov2-nm-weather-detail">Rain ${w.precipitation}%, Wind ${w.windspeed} km/h</span>
           <span class="tov2-nm-weather-loc">${w.locationName}</span>
         </div>
       </div>`;
@@ -760,8 +851,8 @@ function buildTeamOverviewHTML(ov) {
   const rosterPanel = `
     <div class="tov2-roster">
       <div class="tov2-roster-tabs">
-        <span class="tov2-rtab tov2-rtab-on">Available · ${totalPlayers - atRisk.length}</span>
-        <span class="tov2-rtab" style="color:var(--red)">At Risk · ${atRisk.length}</span>
+        <span class="tov2-rtab tov2-rtab-on">Available (${totalPlayers - atRisk.length})</span>
+        <span class="tov2-rtab" style="color:var(--red)">At Risk (${atRisk.length})</span>
       </div>
       <div class="tov2-roster-list">${rosterRows}</div>
     </div>`;
@@ -787,7 +878,7 @@ function buildTeamOverviewHTML(ov) {
   // ── Team Load panel ───────────────────────────────────────────────────
   const loadPanel = `
     <div class="tov2-load">
-      <div class="tov2-load-head">${IC.flame} Team Load · 7d</div>
+      <div class="tov2-load-head">${IC.flame} Team Load (7d)</div>
       ${strainTotal > 0 ? `
         <div class="tov-load-row"><span class="tov-load-lbl">High (&ge;14)</span><div class="tov-load-bg"><div class="tov-load-fill red"    style="width:${hPct}%"></div></div><span class="tov-load-count">${highStrainCount}</span></div>
         <div class="tov-load-row"><span class="tov-load-lbl">Moderate</span><div class="tov-load-bg"><div class="tov-load-fill yellow" style="width:${mdPct}%"></div></div><span class="tov-load-count">${modStrainCount}</span></div>
@@ -883,10 +974,324 @@ function wireNextMatchUI() {
   if (editBtn) editBtn.addEventListener('click', () => { clearNextMatch(); refreshTeamOverview(); });
 }
 
+function wireNotesBtn(container, athleteId) {
+  wireLabSection(container, athleteId);
+
+  // Coach notes save
+  const saveBtn = container?.querySelector('.pa-notes-save');
+  if (!saveBtn || !athleteId) return;
+  const ta     = container.querySelector('.pa-notes-ta');
+  const status = container.querySelector('.pa-notes-status');
+  saveBtn.addEventListener('click', async () => {
+    saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+    try {
+      await api(`/api/athletes/${athleteId}/notes`, { method: 'PATCH', body: JSON.stringify({ notes: ta.value }) });
+      if (status) { status.textContent = '✓ Saved'; setTimeout(() => { status.textContent = ''; }, 2500); }
+    } catch { if (status) status.textContent = 'Error saving'; }
+    finally { saveBtn.disabled = false; saveBtn.textContent = 'Save Notes'; }
+  });
+}
+
+function wireLabSection(container, athleteId) {
+  const area = container?.querySelector('.pa-lab-upload-area');
+  if (!area || !athleteId) return;
+  const fileInput = area.querySelector('.pa-lab-file-input');
+  const prompt    = area.querySelector('.pa-lab-upload-prompt');
+  const preview   = area.querySelector('.pa-lab-preview');
+  const actions   = area.querySelector('.pa-lab-actions');
+  const analyzeBtn= area.querySelector('.pa-lab-analyze-btn');
+  const clearBtn  = area.querySelector('.pa-lab-clear-btn');
+  const progress  = area.querySelector('.pa-lab-progress');
+  let selectedFile = null;
+
+  const showFile = (file) => {
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+      prompt.style.display = 'none';
+      actions.style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearFile = () => {
+    selectedFile = null;
+    preview.src = '';
+    preview.style.display = 'none';
+    prompt.style.display = 'flex';
+    actions.style.display = 'none';
+    fileInput.value = '';
+  };
+
+  area.addEventListener('click', e => { if (!e.target.closest('button')) fileInput.click(); });
+  area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('pa-lab-drag'); });
+  area.addEventListener('dragleave', () => area.classList.remove('pa-lab-drag'));
+  area.addEventListener('drop', e => {
+    e.preventDefault(); area.classList.remove('pa-lab-drag');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) showFile(f);
+  });
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) showFile(fileInput.files[0]); });
+  clearBtn?.addEventListener('click', e => { e.stopPropagation(); clearFile(); });
+
+  analyzeBtn?.addEventListener('click', async e => {
+    e.stopPropagation();
+    if (!selectedFile) return;
+    analyzeBtn.disabled = true;
+    actions.style.display = 'none';
+    progress.style.display = 'block';
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise((resolve, reject) => {
+        reader.onload = ev => resolve(ev.target.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
+      });
+      const res = await api(`/api/athletes/${athleteId}/analyze-lab`, {
+        method: 'POST',
+        body: JSON.stringify({ imageBase64: base64, mimeType: selectedFile.type }),
+      });
+      // Re-render the whole dashboard to show new results
+      const dash = container.closest('.ac-dashboard') || container;
+      const d = await api(`/api/athletes/${athleteId}/dashboard`);
+      dash.innerHTML = renderDashboard(d);
+      wireLabSection(dash, athleteId);
+      const aiBtn2 = dash.querySelector('.ai-note-btn');
+      if (aiBtn2) aiBtn2.addEventListener('click', () => fetchAINote(athleteId, d, dash));
+    } catch (err) {
+      progress.style.display = 'none';
+      actions.style.display = 'flex';
+      analyzeBtn.disabled = false;
+      alert('Analysis failed: ' + err.message);
+    }
+  });
+}
+
+function wirePitchTooltip() {
+  const svg = ovEl?.querySelector('.tov-pitch-svg');
+  const tip = document.getElementById('pitch-tooltip');
+  if (!svg || !tip) return;
+
+  svg.addEventListener('mousemove', e => {
+    const g = e.target.closest('.pitch-dot-g');
+    if (!g) { tip.style.display = 'none'; return; }
+    try {
+      const p = JSON.parse(g.dataset.pinfo.replace(/&apos;/g, "'"));
+      const ns = v => v !== null && v !== undefined ? v : 'N/A';
+      tip.innerHTML = `
+        <div class="ptip-name">${p.name}</div>
+        <div class="ptip-role">${p.role}</div>
+        <div class="ptip-stats">
+          <span class="ptip-s">Fitness <strong>${ns(p.fitness)}</strong></span>
+          <span class="ptip-s">Recovery <strong>${ns(p.recovery)}%</strong></span>
+          <span class="ptip-s">Sleep <strong>${ns(p.sleep)}%</strong></span>
+          <span class="ptip-s">HRV <strong>${ns(p.hrv)} ms</strong></span>
+          <span class="ptip-s">Strain <strong>${ns(p.strain)}</strong></span>
+        </div>
+        <div class="ptip-status ${p.synced ? '' : 'ptip-unsynced'}">${p.synced ? p.status : 'Not synced'}</div>`;
+      tip.style.display = 'block';
+      tip.style.left = (e.clientX + 14) + 'px';
+      tip.style.top  = (e.clientY - 10) + 'px';
+    } catch { tip.style.display = 'none'; }
+  });
+
+  svg.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+}
+
+// ── Demo team ─────────────────────────────────────────────────────────
+const DEMO_OV = {
+  teamName: 'Sample Team', teamFitness: 72, statusColor: 'yellow', statusLabel: 'Moderate',
+  totalPlayers: 6, syncedPlayers: 5,
+  avgRecovery: 68, avgSleep: 74, avgStrain: 11.2, avgHrv: 58, avgSprintPct: 79,
+  readyCount: 3, moderateCount: 2, lowCount: 1, readinessPct: 50,
+  highStrainCount: 1, modStrainCount: 3, lightStrainCount: 1,
+  atRisk: [{ name: 'Sofia Martini', role: 'Left Wing', matchFitness: 32, statusColor: 'red', statusLabel: 'Not Ready', factors: ['Low recovery (28%)', 'Poor sleep quality', 'High strain accumulation'] }],
+  allPlayers: [
+    { name: 'Marco Rossi',    role: 'Centre Forward', dob: '1998-03-14', matchFitness: 88, statusColor: 'green',  statusLabel: 'Ready',    synced: true,  recovery: 87, sleep: 90, hrv: 72, strain: 8.2  },
+    { name: 'Elena Romano',   role: 'Goalkeeper',     dob: '2000-07-22', matchFitness: 81, statusColor: 'green',  statusLabel: 'Ready',    synced: true,  recovery: 78, sleep: 82, hrv: 64, strain: 10.1 },
+    { name: 'Federico Ricci', role: 'Right Back',     dob: '1997-11-05', matchFitness: 76, statusColor: 'green',  statusLabel: 'Ready',    synced: true,  recovery: 74, sleep: 79, hrv: 61, strain: 9.4  },
+    { name: 'Chiara Boni',    role: 'Centre Back',    dob: '2001-01-30', matchFitness: 58, statusColor: 'yellow', statusLabel: 'Moderate', synced: true,  recovery: 55, sleep: 61, hrv: 49, strain: 13.8 },
+    { name: 'Luca Ferrari',   role: 'Centre Mid',     dob: '1999-09-18', matchFitness: 63, statusColor: 'yellow', statusLabel: 'Moderate', synced: true,  recovery: 61, sleep: 68, hrv: 53, strain: 14.5 },
+    { name: 'Sofia Martini',  role: 'Left Wing',      dob: '2002-05-09', matchFitness: 32, statusColor: 'red',    statusLabel: 'Not Ready',synced: false, recovery: 28, sleep: 41, hrv: 27, strain: 18.3 },
+  ],
+};
+
+const DEMO_DASHBOARDS = {
+  'Marco Rossi': { noData: false, fetchedAt: new Date().toISOString(),
+    athlete: { id: null, firstName: 'Marco', lastName: 'Rossi', role: 'Centre Forward', weight: 78, notes: 'Strong in aerial duels. Watch left knee — complained after last training.' },
+    matchFitness:   { score: 88, status: { label: 'Ready', color: 'green' }, recommendation: 'Optimal conditions — high-intensity session recommended. Fully recovered and ready for match load.' },
+    energyRecovery: { recoveryScore: 87, status: { label: 'Optimal', color: 'green' }, calories: 2840 },
+    stressFatigue:  { dailyStrain: 8.2,  status: { label: 'Light',   color: 'green' }, hrv: 72, hrvStatus: { label: 'Optimal',  color: 'green'  } },
+    heartRate:      { rhr: 52, avgHR: 68, maxHR: 142, maxHRBpm: 196 },
+    sprintIntensity:{ maxHRPct: 72, status: { label: 'Low',           color: 'green' } },
+    hydration:      { spo2: 98.2, status: { label: 'Good',            color: 'green' } },
+    sleep:          { score: 90,  status: { label: 'Good',            color: 'green' }, totalHours: 8.1, deepMinutes: 112, remMinutes: 98 },
+    injuryRisk:     { status: { label: 'Low',  color: 'green' }, factors: [] },
+  },
+  'Elena Romano': { noData: false, fetchedAt: new Date().toISOString(),
+    athlete: { id: null, firstName: 'Elena', lastName: 'Romano', role: 'Goalkeeper', weight: 64, notes: 'Excellent positioning. Needs more work on long kicks under pressure.' },
+    matchFitness:   { score: 81, status: { label: 'Ready',    color: 'green'  }, recommendation: 'Good recovery and sleep. Recommend goalkeeper-specific high-intensity drills.' },
+    energyRecovery: { recoveryScore: 78, status: { label: 'Optimal',  color: 'green'  }, calories: 2510 },
+    stressFatigue:  { dailyStrain: 10.1, status: { label: 'Moderate', color: 'yellow' }, hrv: 64, hrvStatus: { label: 'Good',     color: 'yellow' } },
+    heartRate:      { rhr: 56, avgHR: 72, maxHR: 168, maxHRBpm: 188 },
+    sprintIntensity:{ maxHRPct: 68, status: { label: 'Moderate',      color: 'yellow' } },
+    hydration:      { spo2: 97.8, status: { label: 'Good',            color: 'green'  } },
+    sleep:          { score: 82,  status: { label: 'Good',            color: 'green'  }, totalHours: 7.8, deepMinutes: 98,  remMinutes: 84  },
+    injuryRisk:     { status: { label: 'Low',  color: 'green' }, factors: [] },
+  },
+  'Federico Ricci': { noData: false, fetchedAt: new Date().toISOString(),
+    athlete: { id: null, firstName: 'Federico', lastName: 'Ricci', role: 'Right Back', weight: 76, notes: 'Consistent performer. Tends to fatigue in second half — monitor strain.' },
+    matchFitness:   { score: 76, status: { label: 'Ready',    color: 'green'  }, recommendation: 'Ready for full match. Monitor strain levels during high-intensity phases.' },
+    energyRecovery: { recoveryScore: 74, status: { label: 'Optimal',  color: 'green'  }, calories: 2680 },
+    stressFatigue:  { dailyStrain: 9.4,  status: { label: 'Light',   color: 'green'  }, hrv: 61, hrvStatus: { label: 'Good',     color: 'yellow' } },
+    heartRate:      { rhr: 58, avgHR: 74, maxHR: 176, maxHRBpm: 192 },
+    sprintIntensity:{ maxHRPct: 78, status: { label: 'Moderate',      color: 'yellow' } },
+    hydration:      { spo2: 98.0, status: { label: 'Good',            color: 'green'  } },
+    sleep:          { score: 79,  status: { label: 'Good',            color: 'green'  }, totalHours: 7.5, deepMinutes: 88,  remMinutes: 76  },
+    injuryRisk:     { status: { label: 'Low',  color: 'green' }, factors: [] },
+  },
+  'Chiara Boni': { noData: false, fetchedAt: new Date().toISOString(),
+    athlete: { id: null, firstName: 'Chiara', lastName: 'Boni', role: 'Centre Back', weight: 62, notes: 'Strong tackler. Moderate fatigue this week — reduce training load tomorrow.' },
+    matchFitness:   { score: 58, status: { label: 'Moderate', color: 'yellow' }, recommendation: 'Technical-tactical session at moderate intensity. Avoid contact drills.' },
+    energyRecovery: { recoveryScore: 55, status: { label: 'Moderate', color: 'yellow' }, calories: 2340 },
+    stressFatigue:  { dailyStrain: 13.8, status: { label: 'High',     color: 'orange' }, hrv: 49, hrvStatus: { label: 'Moderate', color: 'orange' } },
+    heartRate:      { rhr: 64, avgHR: 80, maxHR: 182, maxHRBpm: 190 },
+    sprintIntensity:{ maxHRPct: 83, status: { label: 'Moderate',      color: 'yellow' } },
+    hydration:      { spo2: 97.1, status: { label: 'Good',            color: 'green'  } },
+    sleep:          { score: 61,  status: { label: 'Sufficient',      color: 'yellow' }, totalHours: 6.8, deepMinutes: 72,  remMinutes: 61  },
+    injuryRisk:     { status: { label: 'Moderate', color: 'yellow' }, factors: ['Elevated strain load'] },
+  },
+  'Luca Ferrari': { noData: false, fetchedAt: new Date().toISOString(),
+    athlete: { id: null, firstName: 'Luca', lastName: 'Ferrari', role: 'Centre Mid', weight: 74, notes: 'Great vision. Sleep quality has dropped this week — check external factors.' },
+    matchFitness:   { score: 63, status: { label: 'Moderate', color: 'yellow' }, recommendation: 'Moderate readiness. Technical session OK. Avoid back-to-back high-intensity days.' },
+    energyRecovery: { recoveryScore: 61, status: { label: 'Moderate', color: 'yellow' }, calories: 2590 },
+    stressFatigue:  { dailyStrain: 14.5, status: { label: 'High',     color: 'orange' }, hrv: 53, hrvStatus: { label: 'Moderate', color: 'orange' } },
+    heartRate:      { rhr: 62, avgHR: 78, maxHR: 178, maxHRBpm: 194 },
+    sprintIntensity:{ maxHRPct: 80, status: { label: 'Moderate',      color: 'yellow' } },
+    hydration:      { spo2: 97.5, status: { label: 'Good',            color: 'green'  } },
+    sleep:          { score: 68,  status: { label: 'Sufficient',      color: 'yellow' }, totalHours: 7.1, deepMinutes: 79,  remMinutes: 68  },
+    injuryRisk:     { status: { label: 'Moderate', color: 'yellow' }, factors: ['High daily strain'] },
+  },
+  'Sofia Martini': { noData: false, fetchedAt: new Date().toISOString(),
+    athlete: { id: null, firstName: 'Sofia', lastName: 'Martini', role: 'Left Wing', weight: 58, notes: 'Very fast — top sprint speed in squad. Currently overloaded, needs rest day.' },
+    matchFitness:   { score: 32, status: { label: 'Not Ready', color: 'red' }, recommendation: 'Critical recovery — active rest mandatory. Do not include in match day squad.' },
+    energyRecovery: { recoveryScore: 28, status: { label: 'Low',      color: 'red'   }, calories: 3210 },
+    stressFatigue:  { dailyStrain: 18.3, status: { label: 'Peak',     color: 'red'   }, hrv: 27, hrvStatus: { label: 'Critical', color: 'red'   } },
+    heartRate:      { rhr: 72, avgHR: 88, maxHR: 188, maxHRBpm: 194 },
+    sprintIntensity:{ maxHRPct: 97, status: { label: 'High intensity', color: 'red'  } },
+    hydration:      { spo2: 95.8, status: { label: 'Good',            color: 'green' } },
+    sleep:          { score: 41,  status: { label: 'Poor',            color: 'red'   }, totalHours: 5.2, deepMinutes: 38, remMinutes: 51 },
+    injuryRisk:     { status: { label: 'High', color: 'red' }, factors: ['Low recovery (28%)', 'Poor sleep', 'Peak strain load'] },
+  },
+};
+
+function showDemoTeam() {
+  activeTeamId = '__demo__';
+  document.querySelectorAll('.team-nav-item').forEach(el => el.classList.remove('active'));
+
+  pageTitle.textContent = 'Sample Team';
+  pageSub.textContent   = 'Demo team with mock data, explore all features';
+  topBarActions.innerHTML = `<span class="demo-badge-top">DEMO MODE</span>`;
+
+  rosterView.innerHTML = '';
+  rosterView.classList.remove('hidden');
+
+  ovEl = document.createElement('div');
+  ovEl.className = 'team-overview';
+  ovEl.innerHTML = buildTeamOverviewHTML(DEMO_OV);
+  rosterView.appendChild(ovEl);
+  wireTeamUI();
+
+  // Demo athlete cards
+  const demoAthletes = DEMO_OV.allPlayers;
+  demoAthletes.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'athlete-card demo-card';
+    const parts = p.name.split(' ');
+    const ini = ((parts[0]?.[0] ?? '') + (parts[parts.length-1]?.[0] ?? '')).toUpperCase();
+    const dash = DEMO_DASHBOARDS[p.name];
+    const age = p.dob ? Math.floor((Date.now() - new Date(p.dob)) / 31557600000) : null;
+    const dobStr = p.dob ? new Date(p.dob).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+    card.innerHTML = `
+      <div class="ac-header">
+        <div class="ac-avatar"><span class="ac-initials">${ini}</span></div>
+        <div class="ac-info">
+          <h3 class="ac-name">${p.name}</h3>
+          <span class="ac-pos">${p.role}${age !== null ? `, ${age} yrs, ${dobStr}` : ''}</span>
+        </div>
+        <div class="ac-controls">
+          <span class="whoop-pill ${p.synced ? 'connected' : 'disconnected'}">${p.synced ? '● WHOOP' : 'WHOOP'}</span>
+          <span class="demo-badge" title="This is sample data">DEMO</span>
+        </div>
+      </div>
+      <div class="ac-dashboard">${dash ? renderDashboard(dash) : '<div class="no-data-panel"><strong>No WHOOP data</strong><p>Player not yet synced.</p></div>'}</div>`;
+    rosterView.appendChild(card);
+  });
+
+  // Demo info banner
+  const banner = document.createElement('div');
+  banner.className = 'demo-info-banner';
+  banner.innerHTML = `
+    <strong>You are viewing the Sample Team (Demo)</strong><br>
+    All data is fictional and for demonstration purposes only.
+    <a href="#" class="demo-dismiss" id="demo-dismiss">Dismiss</a>`;
+  rosterView.prepend(banner);
+  document.getElementById('demo-dismiss')?.addEventListener('click', e => { e.preventDefault(); banner.remove(); });
+}
+
+// ── Football calendar ─────────────────────────────────────────────────
+async function fetchCalendar(teamId) {
+  const fixturesEl = document.getElementById('cal-fixtures');
+  const teamNameEl = document.getElementById('cal-team-name');
+  if (!fixturesEl) return;
+
+  fixturesEl.innerHTML = '<div class="cal-loading">Loading…</div>';
+  try {
+    const data = await api(`/api/calendar?teamId=${teamId}`);
+    if (teamNameEl && data.matches?.length) {
+      const first = data.matches[0];
+      const teamName = first.homeId === Number(teamId) ? first.home : first.away;
+      teamNameEl.textContent = teamName;
+    }
+    if (!data.matches || data.matches.length === 0) {
+      fixturesEl.innerHTML = '<div class="cal-empty">No upcoming fixtures found</div>';
+      return;
+    }
+    fixturesEl.innerHTML = data.matches.map(m => {
+      const d = new Date(m.date);
+      const dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      const timeStr = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      const isHome  = m.homeId === Number(teamId);
+      const opp     = isHome ? m.away : m.home;
+      const venue   = isHome ? 'H' : 'A';
+      const days    = Math.ceil((d - Date.now()) / 86400000);
+      const soon    = days <= 7;
+      return `<div class="cal-fixture ${soon ? 'cal-fixture-soon' : ''}">
+        <div class="cal-fx-date">${dateStr}</div>
+        <div class="cal-fx-match">
+          <span class="cal-fx-venue cal-venue-${venue.toLowerCase()}">${venue}</span>
+          <span class="cal-fx-opp">${opp}</span>
+          <span class="cal-fx-time">${timeStr}</span>
+        </div>
+        <div class="cal-fx-comp">${m.competition}</div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    if (err.message.includes('FOOTBALL_API_KEY not configured')) {
+      fixturesEl.innerHTML = '<div class="cal-empty cal-setup">Add <code>FOOTBALL_API_KEY</code> to .env to see fixtures</div>';
+    } else {
+      fixturesEl.innerHTML = `<div class="cal-empty">Could not load fixtures</div>`;
+    }
+  }
+}
+
 function wireTeamUI() {
   wireTeamAIBtn();
   wireNextMatchUI();
   fetchAndShowWeather();
+  wirePitchTooltip();
 }
 
 function refreshTeamOverview() {
@@ -927,8 +1332,9 @@ function buildAthleteCard(teamId, athlete) {
   });
 
   function wireAIBtn(dashData) {
-    const btn = dashEl.querySelector('.ai-note-btn');
-    if (btn) btn.addEventListener('click', () => fetchAINote(athlete.id, dashData, dashEl));
+    const aiBtn = dashEl.querySelector('.ai-note-btn');
+    if (aiBtn) aiBtn.addEventListener('click', () => fetchAINote(athlete.id, dashData, dashEl));
+    wireNotesBtn(dashEl, athlete.id);
   }
 
   async function loadDashboard() {
@@ -1110,6 +1516,12 @@ async function boot() {
   sidebarTeamsEl.innerHTML = '';
   activeTeamId = null;
   ovEl = null;
+
+  document.getElementById('demo-team-btn')?.addEventListener('click', showDemoTeam);
+
+  const CAL_TEAM_ID = '108'; // Inter Milan
+  fetchCalendar(CAL_TEAM_ID);
+  document.getElementById('cal-refresh-btn')?.addEventListener('click', () => fetchCalendar(CAL_TEAM_ID));
 
   const teams = await api('/api/teams');
   teams.forEach(addTeamToSidebar);
