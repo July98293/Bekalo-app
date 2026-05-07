@@ -13,13 +13,13 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-logo">
-        <span class="logo-icon">⚡</span>
+        <div class="logo-mark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
         <span class="logo-text">Bekalo</span>
       </div>
-      <a href="https://bekalo.com" target="_blank" class="sidebar-site-link">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        bekalo.com
-      </a>
       <nav class="sidebar-nav">
         <span class="nav-label">TEAMS</span>
         <div id="sidebar-teams"></div>
@@ -28,6 +28,11 @@
         <input id="team-name" placeholder="New team name…" autocomplete="off" required />
         <button type="submit" class="btn btn-primary btn-sm w-full">+ Create Team</button>
       </form>
+      <div class="auth-user-row" id="user-row" style="display:none">
+        <div class="auth-user-avatar" id="user-avatar"></div>
+        <span class="auth-user-name" id="user-name"></span>
+        <button class="auth-logout-btn" id="logout-btn">Sign out</button>
+      </div>
     </aside>
 
     <!-- Main -->
@@ -147,12 +152,21 @@
   </div>
 
   <!-- ── AI Chat Widget ── -->
-  <button class="chat-bubble" id="chat-bubble" title="Bekalo AI Coach">⚡</button>
+  <button class="chat-bubble" id="chat-bubble" title="Bekalo AI Coach">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  </button>
 
   <div class="chat-panel hidden" id="chat-panel">
     <div class="chat-header">
       <div class="chat-header-left">
-        <div class="chat-avatar">🧠</div>
+        <div class="chat-avatar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
+            <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
+          </svg>
+        </div>
         <div>
           <div class="chat-title">Bekalo AI Coach</div>
           <div class="chat-sub">Powered by GPT-4o mini</div>
@@ -170,7 +184,48 @@
 
     <div class="chat-input-row">
       <textarea class="chat-input" id="chat-input" placeholder="Ask about your players…" rows="1"></textarea>
-      <button class="chat-send" id="chat-send">➤</button>
+      <button class="chat-send" id="chat-send">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Auth Screen ── -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="logo-mark">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
+        <span class="auth-brand-name">Bekalo</span>
+      </div>
+      <h1 class="auth-heading">Performance Hub</h1>
+      <p class="auth-subhead">Sign in to manage your squad</p>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login">Sign In</button>
+        <button class="auth-tab" id="tab-register">Create Account</button>
+      </div>
+
+      <form id="login-form" class="auth-form">
+        <label>Email<input type="email" id="login-email" placeholder="coach@team.com" autocomplete="email" required /></label>
+        <label>Password<input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required /></label>
+        <button type="submit" class="btn btn-primary w-full">Sign In</button>
+        <p id="login-error" class="auth-err hidden"></p>
+      </form>
+
+      <form id="register-form" class="auth-form hidden">
+        <label>Full name<input type="text" id="reg-name" placeholder="John Smith" autocomplete="name" required /></label>
+        <label>Email<input type="email" id="reg-email" placeholder="coach@team.com" autocomplete="email" required /></label>
+        <label>Password<input type="password" id="reg-password" placeholder="Min. 8 characters" autocomplete="new-password" required /></label>
+        <button type="submit" class="btn btn-primary w-full">Create Account</button>
+        <p id="reg-error" class="auth-err hidden"></p>
+      </form>
     </div>
   </div>
 

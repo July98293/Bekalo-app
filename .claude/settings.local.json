@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(node -e \"require\\('./server.js'\\)\")",
-      "Bash(node --check server.js)"
+      "Bash(node --check server.js)",
+      "Bash(Start-Sleep -Seconds 3)",
+      "Bash(Invoke-WebRequest -Uri http://127.0.0.1:8899/api/teams -UseBasicParsing)",
+      "Bash(Select-Object -ExpandProperty StatusCode)",
+      "PowerShell(Invoke-WebRequest -Uri http://127.0.0.1:8899/api/teams -UseBasicParsing)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8899 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; Write-Host \"Done\")",
+      "Bash(node --check public/app.js)"
     ]
   }
 }
