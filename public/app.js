@@ -53,6 +53,7 @@ function showAuthScreen() {
   authScreen.classList.remove('hidden');
   userRow.style.display = 'none';
   currentUser = null;
+  document.getElementById('admin-nav')?.classList.add('hidden');
 }
 
 function hideAuthScreen(user) {
@@ -61,6 +62,9 @@ function hideAuthScreen(user) {
   userRow.style.display = 'flex';
   userAvatar.textContent = (user.name?.[0] ?? '?').toUpperCase();
   userName.textContent = user.name;
+  // Show admin nav only for admins
+  const adminNav = document.getElementById('admin-nav');
+  if (adminNav) adminNav.classList.toggle('hidden', user.role !== 'admin');
 }
 
 tabLogin.addEventListener('click', () => {
@@ -109,12 +113,14 @@ logoutBtn.addEventListener('click', () => {
   clearToken();
   rosterView.innerHTML = '';
   rosterView.classList.add('hidden');
+  document.getElementById('admin-view')?.classList.add('hidden');
   sidebarTeamsEl.innerHTML = '';
   pageTitle.textContent = 'Select a team';
   pageSub.textContent   = 'Create or select a team from the sidebar';
   topBarActions.innerHTML = '';
   activeTeamId = null;
   ovEl = null;
+  window.location.hash = '';
   showAuthScreen();
 });
 
@@ -1190,6 +1196,8 @@ const DEMO_DASHBOARDS = {
 function showDemoTeam() {
   activeTeamId = '__demo__';
   document.querySelectorAll('.team-nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('admin-view')?.classList.add('hidden');
+  window.location.hash = '';
 
   pageTitle.textContent = 'Sample Team';
   pageSub.textContent   = 'Demo team with mock data, explore all features';
@@ -1399,6 +1407,8 @@ function refreshSidebarCount(teamId) {
 
 function showTeam(team) {
   activeTeamId = team.id;
+  document.getElementById('admin-view')?.classList.add('hidden');
+  window.location.hash = '';
 
   document.querySelectorAll('.team-nav-item').forEach(el => el.classList.remove('active'));
   const navItem = sidebarTeamsEl.querySelector(`[data-team-nav="${team.id}"]`);
@@ -1518,6 +1528,7 @@ async function boot() {
   ovEl = null;
 
   document.getElementById('demo-team-btn')?.addEventListener('click', showDemoTeam);
+  document.getElementById('admin-btn')?.addEventListener('click', showAdminView);
 
   const CAL_TEAM_ID = '108'; // Inter Milan
   fetchCalendar(CAL_TEAM_ID);
@@ -1554,6 +1565,14 @@ async function boot() {
       const user = await apiNoAuth('/auth/me', { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } });
       hideAuthScreen(user);
       await boot();
+      // Guard: if URL hash is #admin, verify role before showing admin page
+      if (window.location.hash === '#admin') {
+        if (user.role !== 'admin') {
+          window.location.hash = '';
+        } else {
+          await showAdminView();
+        }
+      }
     } catch {
       clearToken();
       showAuthScreen();
@@ -1671,5 +1690,318 @@ modalSubmitBtn.addEventListener('click', async () => {
   } finally {
     modalSubmitBtn.disabled = false;
     modalSubmitBtn.textContent = 'Link WHOOP Account';
+  }
+});
+
+// ── Admin page ───────────────────────────────────────────────────────
+const adminView = document.getElementById('admin-view');
+
+async function showAdminView() {
+  // Always re-verify admin role from server before showing
+  let me;
+  try {
+    me = await api('/auth/me');
+  } catch {
+    return;
+  }
+  if (me.role !== 'admin') {
+    alert('Admin access required.');
+    window.location.hash = '';
+    return;
+  }
+  // Refresh currentUser with latest role
+  currentUser = { ...currentUser, ...me };
+
+  window.location.hash = '#admin';
+  rosterView.classList.add('hidden');
+  adminView.classList.remove('hidden');
+  pageTitle.textContent = 'Admin Dashboard';
+  pageSub.textContent   = 'Platform management · users, teams & athletes';
+  topBarActions.innerHTML = `<span class="admin-top-badge">ADMIN</span>`;
+  document.querySelectorAll('.team-nav-item:not(#admin-btn)').forEach(el => el.classList.remove('active'));
+  document.getElementById('admin-btn')?.classList.add('active');
+  activeTeamId = null;
+  ovEl = null;
+
+  await loadAdminDashboard();
+}
+
+async function loadAdminDashboard() {
+  adminView.innerHTML = '<div class="admin-loading">Loading platform data…</div>';
+  try {
+    const [stats, users, teams] = await Promise.all([
+      api('/api/admin/stats'),
+      api('/api/admin/users'),
+      api('/api/admin/teams'),
+    ]);
+    adminView.innerHTML = renderAdminHTML(stats, users, teams);
+    wireAdminEvents(users);
+  } catch (err) {
+    adminView.innerHTML = `<div class="admin-error">Failed to load admin data: ${err.message}</div>`;
+  }
+}
+
+function renderAdminHTML(stats, users, teams) {
+  const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+
+  const statsRow = `
+    <div class="adm-stats-row">
+      <div class="adm-stat-card">
+        <div class="adm-stat-val">${stats.totalUsers}</div>
+        <div class="adm-stat-lbl">Total Users</div>
+      </div>
+      <div class="adm-stat-card accent-admin">
+        <div class="adm-stat-val">${stats.totalAdmins}</div>
+        <div class="adm-stat-lbl">Admins</div>
+      </div>
+      <div class="adm-stat-card">
+        <div class="adm-stat-val">${stats.totalTeams}</div>
+        <div class="adm-stat-lbl">Teams</div>
+      </div>
+      <div class="adm-stat-card">
+        <div class="adm-stat-val">${stats.totalAthletes}</div>
+        <div class="adm-stat-lbl">Athletes</div>
+      </div>
+    </div>`;
+
+  const usersTable = `
+    <div class="adm-section">
+      <div class="adm-section-head">
+        <span class="adm-section-title">Users</span>
+        <span class="adm-section-count">${users.length}</span>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Email</th><th>Role</th>
+              <th>Teams</th><th>Athletes</th><th>Joined</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${users.map(u => `
+              <tr data-user-id="${u.id}">
+                <td><span class="adm-avatar">${(u.name?.[0] ?? '?').toUpperCase()}</span>${u.name}</td>
+                <td class="adm-email">${u.email}</td>
+                <td>
+                  <span class="adm-role-badge ${u.role === 'admin' ? 'role-admin' : 'role-user'}">${u.role}</span>
+                </td>
+                <td>${u.teamCount}</td>
+                <td>${u.athleteCount}</td>
+                <td>${fmtDate(u.createdAt)}</td>
+                <td>
+                  <button class="btn btn-xs ${u.role === 'admin' ? 'btn-ghost' : 'btn-accent'} adm-role-btn"
+                    data-user-id="${u.id}"
+                    data-current-role="${u.role}">
+                    ${u.role === 'admin' ? 'Demote' : 'Make Admin'}
+                  </button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  const teamsTable = `
+    <div class="adm-section">
+      <div class="adm-section-head">
+        <span class="adm-section-title">Teams</span>
+        <span class="adm-section-count">${teams.length}</span>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead>
+            <tr><th>Team</th><th>Owner</th><th>Owner Email</th><th>Athletes</th><th>Created</th></tr>
+          </thead>
+          <tbody>
+            ${teams.map(t => `
+              <tr>
+                <td><strong>${t.name}</strong></td>
+                <td>${t.owner.name}</td>
+                <td class="adm-email">${t.owner.email}</td>
+                <td>${t.athleteCount}</td>
+                <td>${fmtDate(t.createdAt)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  return `
+    <div class="adm-wrap">
+      ${statsRow}
+      ${usersTable}
+      ${teamsTable}
+    </div>`;
+}
+
+function wireAdminEvents(users) {
+  adminView.querySelectorAll('.adm-role-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const userId      = Number(btn.dataset.userId);
+      const currentRole = btn.dataset.currentRole;
+      const newRole     = currentRole === 'admin' ? 'user' : 'admin';
+      const label       = newRole === 'admin' ? 'promote to admin' : 'demote to user';
+
+      if (!confirm(`Are you sure you want to ${label} this user?`)) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      try {
+        await api(`/api/admin/users/${userId}/role`, {
+          method: 'PATCH',
+          body: JSON.stringify({ role: newRole }),
+        });
+        await loadAdminDashboard();
+      } catch (err) {
+        alert('Failed to update role: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = currentRole === 'admin' ? 'Demote' : 'Make Admin';
+      }
+    });
+  });
+}
+
+// ── Password visibility toggle ────────────────────────────────────────
+const EYE_ON  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_OFF = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+function wirePwToggle(toggleId, inputId) {
+  const btn   = document.getElementById(toggleId);
+  const input = document.getElementById(inputId);
+  if (!btn || !input) return;
+  btn.innerHTML = EYE_ON;
+  btn.addEventListener('click', () => {
+    const show = input.type === 'password';
+    input.type    = show ? 'text' : 'password';
+    btn.innerHTML = show ? EYE_OFF : EYE_ON;
+  });
+}
+
+wirePwToggle('login-pw-toggle',  'login-password');
+wirePwToggle('reg-pw-toggle',    'reg-password');
+wirePwToggle('reset-pw-toggle',  'reset-password-input');
+
+// ── Forgot / reset password flow ──────────────────────────────────────
+const authTabsBar = document.getElementById('auth-tabs-bar');
+const forgotForm  = document.getElementById('forgot-form');
+const resetForm   = document.getElementById('reset-form');
+const forgotError = document.getElementById('forgot-error');
+const forgotOk    = document.getElementById('forgot-ok');
+const resetError  = document.getElementById('reset-error');
+const resetOk     = document.getElementById('reset-ok');
+let   forgotEmail = '';
+
+function showLoginTab() {
+  authTabsBar.classList.remove('hidden');
+  loginForm.classList.remove('hidden');
+  registerForm.classList.add('hidden');
+  forgotForm.classList.add('hidden');
+  resetForm.classList.add('hidden');
+  tabLogin.classList.add('active');
+  tabRegister.classList.remove('active');
+}
+
+function showForgotForm() {
+  authTabsBar.classList.add('hidden');
+  loginForm.classList.add('hidden');
+  registerForm.classList.add('hidden');
+  forgotForm.classList.remove('hidden');
+  resetForm.classList.add('hidden');
+  forgotError.classList.add('hidden');
+  forgotOk.classList.add('hidden');
+  document.getElementById('forgot-email').value = '';
+}
+
+function showResetForm() {
+  forgotForm.classList.add('hidden');
+  resetForm.classList.remove('hidden');
+  resetError.classList.add('hidden');
+  resetOk.classList.add('hidden');
+  document.getElementById('reset-code').value = '';
+  document.getElementById('reset-password-input').value = '';
+}
+
+document.getElementById('forgot-link')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  showForgotForm();
+});
+
+document.getElementById('back-to-login')?.addEventListener('click', () => showLoginTab());
+
+document.getElementById('back-to-forgot')?.addEventListener('click', () => {
+  resetForm.classList.add('hidden');
+  forgotForm.classList.remove('hidden');
+  resetError.classList.add('hidden');
+  resetOk.classList.add('hidden');
+});
+
+document.getElementById('forgot-submit')?.addEventListener('click', async () => {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email) {
+    forgotError.textContent = 'Enter your email address.';
+    forgotError.classList.remove('hidden');
+    return;
+  }
+  forgotError.classList.add('hidden');
+  forgotOk.classList.add('hidden');
+  const btn = document.getElementById('forgot-submit');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    await apiNoAuth('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
+    forgotEmail = email;
+    forgotOk.textContent = 'Code sent! Check your inbox (or the server console in dev mode).';
+    forgotOk.classList.remove('hidden');
+    setTimeout(() => showResetForm(), 1500);
+  } catch (err) {
+    forgotError.textContent = err.message;
+    forgotError.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Reset Code';
+  }
+});
+
+document.getElementById('reset-submit')?.addEventListener('click', async () => {
+  const code     = document.getElementById('reset-code').value.trim();
+  const password = document.getElementById('reset-password-input').value;
+  if (!code || !password) {
+    resetError.textContent = 'Enter the 6-digit code and your new password.';
+    resetError.classList.remove('hidden');
+    return;
+  }
+  resetError.classList.add('hidden');
+  resetOk.classList.add('hidden');
+  const btn = document.getElementById('reset-submit');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  try {
+    await apiNoAuth('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email: forgotEmail, code, password }),
+    });
+    resetOk.textContent = 'Password updated! Signing you in…';
+    resetOk.classList.remove('hidden');
+    setTimeout(async () => {
+      try {
+        const res = await apiNoAuth('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email: forgotEmail, password }),
+        });
+        setToken(res.token);
+        showLoginTab();
+        hideAuthScreen(res.user);
+        await boot();
+      } catch {
+        showLoginTab();
+      }
+    }, 1200);
+  } catch (err) {
+    resetError.textContent = err.message;
+    resetError.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Set New Password';
   }
 });

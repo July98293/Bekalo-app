@@ -25,6 +25,15 @@
         <span class="nav-label">TEAMS</span>
         <div id="sidebar-teams"></div>
       </nav>
+
+      <!-- Admin nav — shown only for admin users -->
+      <nav class="sidebar-nav sidebar-admin-nav hidden" id="admin-nav">
+        <span class="nav-label">ADMIN</span>
+        <button id="admin-btn" class="team-nav-item admin-nav-item">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Admin Dashboard
+        </button>
+      </nav>
       <!-- Calendar section -->
       <div class="sidebar-calendar">
         <div class="sidebar-cal-header">
@@ -66,6 +75,9 @@
       </header>
 
       <section id="roster-view" class="roster-view hidden"></section>
+
+      <!-- Admin view — shown only to admins -->
+      <section id="admin-view" class="admin-view hidden"></section>
     </main>
   </div>
 
@@ -215,37 +227,126 @@
 
   <!-- ── Auth Screen ── -->
   <div id="auth-screen" class="auth-screen">
-    <div class="auth-card">
-      <div class="auth-brand">
+
+    <!-- Left branding panel (desktop) -->
+    <div class="auth-left">
+      <div class="auth-left-logo">
         <div class="logo-mark">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-          </svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         </div>
-        <span class="auth-brand-name">Bekalo</span>
+        <span class="auth-left-brand">Bekalo</span>
       </div>
-      <h1 class="auth-heading">Performance Hub</h1>
-      <p class="auth-subhead">Sign in to manage your squad</p>
-
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="tab-login">Sign In</button>
-        <button class="auth-tab" id="tab-register">Create Account</button>
+      <div class="auth-left-copy">
+        <h2>Football Performance, Reimagined</h2>
+        <p>Real-time biometrics, AI coaching, and match‑readiness insights for your entire squad.</p>
       </div>
+      <ul class="auth-left-features">
+        <li><span class="alf-dot green"></span>WHOOP biometric sync</li>
+        <li><span class="alf-dot indigo"></span>AI coaching recommendations</li>
+        <li><span class="alf-dot yellow"></span>Match fitness predictions</li>
+        <li><span class="alf-dot red"></span>Injury risk monitoring</li>
+      </ul>
+    </div>
 
-      <form id="login-form" class="auth-form">
-        <label>Email<input type="email" id="login-email" placeholder="coach@team.com" autocomplete="email" required /></label>
-        <label>Password<input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required /></label>
-        <button type="submit" class="btn btn-primary w-full">Sign In</button>
-        <p id="login-error" class="auth-err hidden"></p>
-      </form>
+    <!-- Right form panel -->
+    <div class="auth-right">
+      <div class="auth-card">
 
-      <form id="register-form" class="auth-form hidden">
-        <label>Full name<input type="text" id="reg-name" placeholder="John Smith" autocomplete="name" required /></label>
-        <label>Email<input type="email" id="reg-email" placeholder="coach@team.com" autocomplete="email" required /></label>
-        <label>Password<input type="password" id="reg-password" placeholder="Min. 8 characters" autocomplete="new-password" required /></label>
-        <button type="submit" class="btn btn-primary w-full">Create Account</button>
-        <p id="reg-error" class="auth-err hidden"></p>
-      </form>
+        <!-- Logo (mobile only) -->
+        <div class="auth-brand auth-brand-mobile">
+          <div class="logo-mark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <span class="auth-brand-name">Bekalo</span>
+        </div>
+
+        <!-- Tabs — Sign In / Create Account -->
+        <div class="auth-tabs" id="auth-tabs-bar">
+          <button class="auth-tab active" id="tab-login">Sign In</button>
+          <button class="auth-tab" id="tab-register">Create Account</button>
+        </div>
+
+        <!-- ── Sign In form ── -->
+        <form id="login-form" class="auth-form">
+          <div class="auth-field">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" placeholder="coach@club.com" autocomplete="email" required />
+          </div>
+          <div class="auth-field">
+            <div class="auth-label-row">
+              <label for="login-password">Password</label>
+              <a href="#" class="auth-forgot-link" id="forgot-link">Forgot password?</a>
+            </div>
+            <div class="pw-wrap">
+              <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required />
+              <button type="button" class="pw-toggle" id="login-pw-toggle" tabindex="-1" aria-label="Show password"></button>
+            </div>
+          </div>
+          <button type="submit" class="btn-auth">Sign In</button>
+          <p id="login-error" class="auth-err hidden"></p>
+        </form>
+
+        <!-- ── Create Account form ── -->
+        <form id="register-form" class="auth-form hidden">
+          <div class="auth-field">
+            <label for="reg-name">Full Name</label>
+            <input type="text" id="reg-name" placeholder="Jane Smith" autocomplete="name" required />
+          </div>
+          <div class="auth-field">
+            <label for="reg-email">Email</label>
+            <input type="email" id="reg-email" placeholder="coach@club.com" autocomplete="email" required />
+          </div>
+          <div class="auth-field">
+            <label for="reg-password">Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="reg-password" placeholder="Min. 8 characters" autocomplete="new-password" required />
+              <button type="button" class="pw-toggle" id="reg-pw-toggle" tabindex="-1" aria-label="Show password"></button>
+            </div>
+          </div>
+          <button type="submit" class="btn-auth">Create Account</button>
+          <p id="reg-error" class="auth-err hidden"></p>
+        </form>
+
+        <!-- ── Forgot password form ── -->
+        <div id="forgot-form" class="auth-form hidden">
+          <button type="button" class="auth-back-btn" id="back-to-login">← Back to Sign In</button>
+          <div class="auth-sub-heading">
+            <h3>Reset password</h3>
+            <p>Enter your email and we'll send you a 6-digit code.</p>
+          </div>
+          <div class="auth-field">
+            <label for="forgot-email">Email</label>
+            <input type="email" id="forgot-email" placeholder="coach@club.com" autocomplete="email" />
+          </div>
+          <button type="button" class="btn-auth" id="forgot-submit">Send Reset Code</button>
+          <p id="forgot-error" class="auth-err hidden"></p>
+          <p id="forgot-ok"    class="auth-ok  hidden"></p>
+        </div>
+
+        <!-- ── Reset password form ── -->
+        <div id="reset-form" class="auth-form hidden">
+          <button type="button" class="auth-back-btn" id="back-to-forgot">← Back</button>
+          <div class="auth-sub-heading">
+            <h3>Set new password</h3>
+            <p>Enter the 6-digit code from your email and choose a new password.</p>
+          </div>
+          <div class="auth-field">
+            <label for="reset-code">6-Digit Code</label>
+            <input type="text" id="reset-code" placeholder="123456" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+          </div>
+          <div class="auth-field">
+            <label for="reset-password-input">New Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="reset-password-input" placeholder="Min. 8 characters" autocomplete="new-password" />
+              <button type="button" class="pw-toggle" id="reset-pw-toggle" tabindex="-1" aria-label="Show password"></button>
+            </div>
+          </div>
+          <button type="button" class="btn-auth" id="reset-submit">Set New Password</button>
+          <p id="reset-error" class="auth-err hidden"></p>
+          <p id="reset-ok"    class="auth-ok  hidden"></p>
+        </div>
+
+      </div>
     </div>
   </div>
 
